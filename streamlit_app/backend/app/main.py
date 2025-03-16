@@ -1,10 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes.prediction import router as prediction_router
-from app.database.connection import connect_to_mongo, close_mongo_connection
-from app.settings.config import settings
-from app.services.ml_model import load_model
+
+
+# Correct import paths
+from streamlit_app.backend.app.routes.prediction import router as prediction_router
+from streamlit_app.backend.app.database.connection import connect_to_mongo, close_mongo_connection
+from streamlit_app.backend.app.settings.config import settings
+from streamlit_app.backend.app.services.ml_model import load_model
 
 # Create FastAPI app
 app = FastAPI(
@@ -29,18 +32,19 @@ app.include_router(prediction_router, prefix=settings.API_PREFIX)
 @app.on_event("startup")
 async def startup_event():
     """Initialization on application startup"""
-    await connect_to_mongo()
-    
-    # Preload the model to avoid cold start
     try:
-        load_model()
+        await connect_to_mongo()
+        load_model()  # Preload the model to avoid cold start
     except Exception as e:
-        print(f"Warning: Could not preload model: {e}")
+        print(f"Startup error: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on application shutdown"""
-    await close_mongo_connection()
+    try:
+        await close_mongo_connection()
+    except Exception as e:
+        print(f"Shutdown error: {e}")
 
 @app.get("/")
 async def root():
@@ -58,3 +62,9 @@ async def health_check():
         "status": "healthy",
         "environment": settings.ENVIRONMENT
     }
+
+# For debugging purposes
+if __name__ == "__main__":
+    import uvicorn
+    
+    uvicorn.run(app, host="127.0.0.1", port=8000)

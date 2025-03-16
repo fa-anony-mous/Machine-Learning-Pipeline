@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 
-from app.schemas.prediction import PredictionInput, PredictionResponse, PredictionRecord
-from app.services.ml_model import predict_don
-from app.repositories.prediction import create_prediction, get_prediction_by_id, get_recent_predictions
+from streamlit_app.backend.app.schemas.prediction import PredictionInput, PredictionResponse, PredictionRecord
+from streamlit_app.backend.app.services.ml_model import predict_don
+from streamlit_app.backend.app.repositories.prediction import create_prediction, get_prediction_by_id, get_recent_predictions
 
 router = APIRouter(
     prefix="/predictions",

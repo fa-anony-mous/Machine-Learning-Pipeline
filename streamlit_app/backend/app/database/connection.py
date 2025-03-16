@@ -1,7 +1,7 @@
 import motor.motor_asyncio
 from fastapi import Depends
 
-from app.settings.config import settings
+from streamlit_app.backend.app.settings.config import settings
 
 # Database client and connection
 client = None

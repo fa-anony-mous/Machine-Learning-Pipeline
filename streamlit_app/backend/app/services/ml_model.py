@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Union
 import os
 from pathlib import Path
 
-from app.settings.config import settings
+from streamlit_app.backend.app.settings.config import settings
 
 # Model and preprocessing objects
 model = None

@@ -1,13 +1,6 @@
+# Import required modules first
 import streamlit as st
-import requests
-import pandas as pd
-import numpy as np
-import json
-import os
-import time
-from datetime import datetime
 
-# Set page configuration
 st.set_page_config(
     page_title="DON Prediction App",
     page_icon="🌾",
@@ -15,22 +8,56 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+import os
+import sys
+import time
+import threading
+
+
+# Add project paths to Python path
+sys.path.insert(0, os.path.abspath('..'))
+
+# Start FastAPI with uvicorn in a separate thread
+def run_fastapi():
+    """Start the FastAPI server in a separate thread"""
+    try:
+        from backend.app.main import app as fastapi_app
+        import uvicorn
+        uvicorn.run(fastapi_app, host="127.0.0.1", port=8000)
+    except Exception as e:
+        st.error(f"Failed to start FastAPI server: {e}")
+
+# Start FastAPI server in a background thread
+thread = threading.Thread(target=run_fastapi, daemon=True)
+thread.start()
+
+# Wait a moment for FastAPI to start
+time.sleep(2)
+
+# Set environment variable for API URL
+os.environ["API_URL"] = "http://127.0.0.1:8000"
+
+# Import the rest of the required modules
+import requests
+import pandas as pd
+import numpy as np
+import json
+from datetime import datetime
+
 # API Configuration
 def get_api_url():
     """Get the API base URL based on environment"""
-    # For Vercel deployment
-    if os.environ.get("VERCEL_ENV") in ["production", "preview"]:
-        return "/api/v1"
+    # Check for environment variable set by combined app
+    if os.environ.get("API_URL"):
+        return os.environ.get("API_URL")
     # For local development
     return "http://localhost:8000"
-
-API_URL = get_api_url()
 
 # Utility functions
 def check_api_status():
     """Check if the API is reachable"""
     try:
-        response = requests.get(f"{API_URL}/health", timeout=5)
+        response = requests.get(f"{get_api_url()}/health", timeout=5)
         if response.status_code == 200:
             return True, "API connected successfully"
         return False, f"API error: {response.status_code}"
@@ -41,7 +68,7 @@ def make_prediction(features):
     """Make a prediction using the API"""
     try:
         response = requests.post(
-            f"{API_URL}/predictions/",
+            f"{get_api_url()}/predictions/",
             json={"features": features},
             timeout=10
         )
@@ -55,7 +82,7 @@ def get_predictions_history(limit=10):
     """Get prediction history from the API"""
     try:
         response = requests.get(
-            f"{API_URL}/predictions/?limit={limit}",
+            f"{get_api_url()}/predictions/?limit={limit}",
             timeout=10
         )
         if response.status_code == 200:
