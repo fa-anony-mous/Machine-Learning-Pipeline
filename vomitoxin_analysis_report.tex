@@ -1,0 +1,255 @@
+% Vomitoxin Analysis Report
+% Based on EDA.ipynb
+
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{subcaption}
+
+\geometry{margin=1in}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1em}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{blue}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{blue}}
+  {\thesubsection}{1em}{}
+
+\title{\textbf{Exploratory Data Analysis of Hyperspectral Imaging Data for Vomitoxin (DON) Prediction in Corn}}
+\author{Data Science Team}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This report presents a comprehensive exploratory data analysis (EDA) of hyperspectral imaging (HSI) data collected from corn samples to predict vomitoxin (deoxynivalenol or DON) contamination levels. Vomitoxin is a mycotoxin produced by Fusarium fungi that poses significant health risks to humans and animals when consumed in contaminated grains. Our analysis explores the relationship between spectral signatures captured through hyperspectral imaging and vomitoxin concentration levels measured in parts per billion (ppb). The findings from this exploratory analysis will inform the development of predictive models for rapid, non-destructive detection of vomitoxin contamination in corn.
+\end{abstract}
+
+\section{Introduction}
+
+\subsection{Background}
+Vomitoxin, also known as deoxynivalenol (DON), is a mycotoxin produced by Fusarium fungi that commonly affects cereal grains including corn, wheat, and barley. Consumption of contaminated grains can lead to serious health issues in both humans and animals, including gastrointestinal problems, immune system suppression, and reduced feed intake in livestock. Traditional methods for detecting vomitoxin contamination are time-consuming, destructive, and expensive, creating a need for rapid, non-destructive screening methods.
+
+\subsection{Objective}
+The primary objective of this study is to explore the potential of hyperspectral imaging (HSI) technology for predicting vomitoxin contamination levels in corn samples. Hyperspectral imaging captures information across the electromagnetic spectrum, providing detailed spectral signatures that may correlate with the presence and concentration of vomitoxin. Through exploratory data analysis, we aim to:
+
+\begin{itemize}
+    \item Understand the distribution and characteristics of vomitoxin contamination in the sample set
+    \item Identify potential relationships between spectral features and vomitoxin concentration
+    \item Prepare the data for subsequent predictive modeling
+    \item Establish a foundation for developing a rapid, non-destructive screening method for vomitoxin detection
+\end{itemize}
+
+\section{Data Description}
+
+\subsection{Dataset Overview}
+The dataset consists of 500 corn samples, each with:
+\begin{itemize}
+    \item A unique identifier (hsi\_id)
+    \item 448 spectral features (numbered 0-447) representing reflectance values at different wavelengths
+    \item Vomitoxin concentration measured in parts per billion (ppb)
+\end{itemize}
+
+The dataset has dimensions of 500 rows (samples) and 450 columns (1 ID column, 448 spectral features, and 1 target variable). Each spectral feature represents the reflectance value at a specific wavelength, capturing the interaction between light and the corn sample. These interactions can reveal information about the chemical composition of the sample, potentially including indicators of vomitoxin contamination.
+
+\subsection{Data Quality Assessment}
+
+Initial data quality checks revealed:
+\begin{itemize}
+    \item No missing values in the dataset
+    \item No duplicate rows in the dataset
+    \item 497 unique sample IDs out of 500 rows, indicating some duplicate IDs
+    \item Duplicate IDs: 'imagoai\_corn\_395', 'imagoai\_corn\_385', and 'imagoai\_corn\_443'
+\end{itemize}
+
+The presence of duplicate IDs suggests potential data collection or labeling issues. However, since the spectral readings and vomitoxin measurements for these duplicates differ, they likely represent distinct samples and were retained for analysis.
+
+\section{Exploratory Data Analysis}
+
+\subsection{Target Variable Analysis: Vomitoxin Concentration}
+
+The vomitoxin concentration in the samples shows the following statistical properties:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Statistic} & \textbf{Value (ppb)} \\
+\midrule
+Count & 500 \\
+Mean & 3,410.01 \\
+Standard Deviation & 13,095.80 \\
+Minimum & 0.00 \\
+25th Percentile & 137.50 \\
+Median & 500.00 \\
+75th Percentile & 1,700.00 \\
+Maximum & 131,000.00 \\
+\bottomrule
+\end{tabular}
+\caption{Summary statistics of vomitoxin (DON) concentration}
+\end{table}
+
+Key observations about the vomitoxin distribution:
+
+\begin{itemize}
+    \item The distribution is highly skewed to the right, with most samples having relatively low concentrations but a few samples with extremely high values.
+    \item The mean (3,410 ppb) is significantly higher than the median (500 ppb), confirming the right-skewed nature of the distribution.
+    \item The maximum value (131,000 ppb) is drastically higher than the 75th percentile (1,700 ppb), indicating the presence of extreme outliers.
+    \item The standard deviation (13,095.80 ppb) is very large, showing high variability in the data.
+\end{itemize}
+
+\subsection{Outlier Analysis}
+
+Using the Interquartile Range (IQR) method, we identified 80 potential outliers in the vomitoxin concentration data. However, based on research by Aguinis et al. (2013) and studies on DON contamination in corn, these extreme values likely represent scientifically significant data points rather than errors. DON contamination naturally exhibits high variability, and removing these outliers could lead to information loss and biased models.
+
+Instead of removing outliers, we applied a logarithmic transformation (log1p) to normalize the skewed distribution while preserving all data points. This approach is supported by literature on mycotoxin analysis, which often employs log transformations to handle the typically right-skewed distributions of contamination levels.
+
+\subsection{Spectral Data Analysis}
+
+The spectral data consists of 448 features representing reflectance values across different wavelengths. Analysis of these features revealed:
+
+\begin{itemize}
+    \item High correlation between adjacent wavelengths, which is expected in spectral data
+    \item Distinct patterns in the spectral signatures, particularly in the higher wavelength regions
+    \item Potential for dimensionality reduction due to the high correlation between features
+\end{itemize}
+
+We also examined the distribution of spectral values across different wavelengths and identified wavelength regions that showed more variability across samples, which could be indicative of their potential importance for predicting vomitoxin concentration.
+
+\subsection{Feature Engineering}
+
+Based on the spectral analysis, we created additional features that might enhance the predictive power:
+
+\begin{itemize}
+    \item Spectral ratios between selected wavelengths
+    \item Log-transformed vomitoxin values to normalize the distribution
+\end{itemize}
+
+These engineered features provide additional information that may help capture the relationship between spectral characteristics and vomitoxin concentration.
+
+\section{Methodology}
+
+\subsection{Data Preprocessing}
+
+Our data preprocessing workflow included:
+
+\begin{enumerate}
+    \item Removing the sample ID column (hsi\_id) as it does not contribute to the prediction
+    \item Checking for and confirming the absence of missing values
+    \item Applying log transformation to the vomitoxin concentration values to address the skewed distribution
+    \item Examining the correlation structure of the spectral features
+    \item Identifying potential outliers using z-scores but retaining all data points based on domain knowledge
+\end{enumerate}
+
+\subsection{Exploratory Visualization}
+
+We created several visualizations to better understand the data:
+
+\begin{itemize}
+    \item Histogram of vomitoxin concentration showing the highly skewed distribution
+    \item Histogram of log-transformed vomitoxin concentration showing a more normalized distribution
+    \item Correlation heatmap of spectral features to identify patterns and relationships
+    \item Distribution plots of selected spectral features to understand their characteristics
+\end{itemize}
+
+These visualizations helped identify patterns and relationships in the data that informed our subsequent analysis and modeling approach.
+
+\section{Key Findings}
+
+\subsection{Vomitoxin Distribution Characteristics}
+
+The analysis of vomitoxin concentration revealed several important insights:
+
+\begin{itemize}
+    \item The distribution is highly skewed, with most samples having relatively low concentrations but a few samples with extremely high values
+    \item The wide range of concentrations (0 to 131,000 ppb) indicates significant variability in contamination levels
+    \item The log transformation effectively normalized the distribution, making it more suitable for statistical analysis and modeling
+    \item The presence of samples with zero vomitoxin concentration (uncontaminated) provides a valuable baseline for comparison
+\end{itemize}
+
+\subsection{Spectral Feature Insights}
+
+Analysis of the spectral features revealed:
+
+\begin{itemize}
+    \item High correlation between adjacent wavelengths, suggesting potential for dimensionality reduction
+    \item Certain wavelength regions showed more variability across samples, potentially indicating areas of interest for vomitoxin prediction
+    \item The spectral signatures exhibited distinct patterns that may be associated with different levels of vomitoxin contamination
+    \item Some spectral features showed outlier values, which could be indicative of unique sample characteristics or measurement anomalies
+\end{itemize}
+
+\subsection{Relationship Between Spectral Features and Vomitoxin}
+
+Our exploratory analysis suggests:
+
+\begin{itemize}
+    \item Potential relationships exist between certain spectral regions and vomitoxin concentration
+    \item The complex nature of these relationships indicates that advanced modeling techniques may be necessary to capture them effectively
+    \item The high dimensionality of the spectral data presents both challenges and opportunities for developing predictive models
+\end{itemize}
+
+\section{Implications and Next Steps}
+
+\subsection{Implications for Vomitoxin Detection}
+
+The findings from this exploratory analysis have several implications for developing a hyperspectral imaging-based approach to vomitoxin detection:
+
+\begin{itemize}
+    \item The wide range of vomitoxin concentrations in the dataset provides a robust foundation for developing models that can predict across different contamination levels
+    \item The identified relationships between spectral features and vomitoxin concentration suggest that hyperspectral imaging has potential as a non-destructive screening method
+    \item The complex nature of these relationships indicates that advanced modeling techniques may be necessary to achieve accurate predictions
+\end{itemize}
+
+\subsection{Recommended Next Steps}
+
+Based on our exploratory analysis, we recommend the following next steps:
+
+\begin{enumerate}
+    \item Develop and evaluate multiple predictive models (e.g., regression models, machine learning algorithms) to predict vomitoxin concentration from spectral features
+    \item Implement feature selection or dimensionality reduction techniques to identify the most informative spectral regions
+    \item Consider ensemble approaches that combine multiple models to improve prediction accuracy
+    \item Validate the models using appropriate cross-validation techniques to ensure generalizability
+    \item Interpret the models to identify the most important spectral regions for vomitoxin prediction, which could provide insights into the underlying biochemical relationships
+\end{enumerate}
+
+\section{Conclusion}
+
+This exploratory data analysis has provided valuable insights into the relationship between hyperspectral imaging data and vomitoxin contamination in corn samples. The findings suggest that hyperspectral imaging has potential as a rapid, non-destructive method for predicting vomitoxin concentration.
+
+The highly skewed distribution of vomitoxin concentration highlights the challenge of developing models that can accurately predict across different contamination levels. However, the log transformation effectively normalized this distribution, providing a more suitable target for modeling.
+
+The analysis of spectral features revealed complex patterns and relationships that may be indicative of vomitoxin contamination. While the high dimensionality of the data presents challenges, it also provides rich information that can be leveraged through appropriate modeling techniques.
+
+Moving forward, the development and evaluation of predictive models will be crucial for realizing the potential of hyperspectral imaging as a screening tool for vomitoxin contamination. Such a tool could significantly enhance food safety monitoring by enabling rapid, non-destructive testing of grain samples.
+
+\section{References}
+
+\begin{enumerate}
+    \item Aguinis, H., Gottfredson, R. K., \& Joo, H. (2013). Best-Practice Recommendations for Defining, Identifying, and Handling Outliers. Organizational Research Methods, 16(2), 270-301.
+    
+    \item Barbedo, J. G. A., Tibola, C. S., \& Fernandes, J. M. C. (2015). Detecting Fusarium head blight in wheat kernels using hyperspectral imaging. Biosystems Engineering, 131, 65-76.
+    
+    \item Delwiche, S. R., Kim, M. S., \& Dong, Y. (2011). Fusarium damage assessment in wheat kernels by Vis/NIR hyperspectral imaging. Sensing and Instrumentation for Food Quality and Safety, 5(2), 63-71.
+    
+    \item McMullen, M., Jones, R., \& Gallenberg, D. (1997). Scab of Wheat and Barley: A Re-emerging Disease of Devastating Impact. Plant Disease, 81(12), 1340-1348.
+    
+    \item Pestka, J. J. (2010). Deoxynivalenol: mechanisms of action, human exposure, and toxicological relevance. Archives of Toxicology, 84(9), 663-679.
+\end{enumerate}
+
+\end{document} 
