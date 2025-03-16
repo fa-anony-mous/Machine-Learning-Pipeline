@@ -1,3 +1,7 @@
+# Set environment variable to prevent PyTorch file watcher issues
+import os
+os.environ['STREAMLIT_SERVER_WATCH_MODULES'] = 'false'
+
 # Import required modules first
 import streamlit as st
 
@@ -8,96 +12,77 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-import os
 import sys
 import time
-import threading
-
+import numpy as np
+from datetime import datetime
+import pandas as pd
+import uuid
 
 # Add project paths to Python path
 sys.path.insert(0, os.path.abspath('..'))
 
-# Start FastAPI with uvicorn in a separate thread
-def run_fastapi():
-    """Start the FastAPI server in a separate thread"""
+# Import ML model functions
+from streamlit_app.backend.app.services.ml_model import load_model, predict_don
+
+# Load the model at startup
+@st.cache_resource
+def get_model():
     try:
-        from backend.app.main import app as fastapi_app
-        import uvicorn
-        uvicorn.run(fastapi_app, host="127.0.0.1", port=8000)
+        load_model()
+        return True
     except Exception as e:
-        st.error(f"Failed to start FastAPI server: {e}")
+        st.error(f"Failed to load model: {e}")
+        return False
 
-# Start FastAPI server in a background thread
-thread = threading.Thread(target=run_fastapi, daemon=True)
-thread.start()
-
-# Wait a moment for FastAPI to start
-time.sleep(2)
-
-# Set environment variable for API URL
-os.environ["API_URL"] = "http://127.0.0.1:8000"
-
-# Import the rest of the required modules
-import requests
-import pandas as pd
-import numpy as np
-import json
-from datetime import datetime
-
-# API Configuration
-def get_api_url():
-    """Get the API base URL based on environment"""
-    # Check for environment variable set by combined app
-    if os.environ.get("API_URL"):
-        return os.environ.get("API_URL")
-    # For local development
-    return "http://localhost:8000"
+# Initialize model status
+model_loaded = get_model()
 
 # Utility functions
-def check_api_status():
-    """Check if the API is reachable"""
-    try:
-        response = requests.get(f"{get_api_url()}/health", timeout=5)
-        if response.status_code == 200:
-            return True, "API connected successfully"
-        return False, f"API error: {response.status_code}"
-    except Exception as e:
-        return False, f"API unreachable: {str(e)}"
-
 def make_prediction(features):
-    """Make a prediction using the API"""
+    """Make a prediction using the model directly"""
     try:
-        response = requests.post(
-            f"{get_api_url()}/predictions/",
-            json={"features": features},
-            timeout=10
-        )
-        if response.status_code == 200:
-            return True, response.json()
-        return False, f"Error: {response.status_code} - {response.text}"
+        if not model_loaded:
+            return False, "Model not loaded"
+        
+        # Process features and make prediction using the predict_don function
+        prediction = predict_don(features)
+        
+        # Create a result
+        result = {
+            "id": str(uuid.uuid4())[:8],
+            "don_value": float(prediction),
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "features": features[:20]  # Store first 20 features to save memory
+        }
+        
+        # Store in session state for history
+        if "prediction_history" not in st.session_state:
+            st.session_state.prediction_history = []
+        st.session_state.prediction_history.append(result)
+        
+        return True, result
     except Exception as e:
-        return False, f"Request failed: {str(e)}"
+        return False, f"Prediction failed: {str(e)}"
 
 def get_predictions_history(limit=10):
-    """Get prediction history from the API"""
-    try:
-        response = requests.get(
-            f"{get_api_url()}/predictions/?limit={limit}",
-            timeout=10
-        )
-        if response.status_code == 200:
-            return True, response.json()
-        return False, f"Error: {response.status_code} - {response.text}"
-    except Exception as e:
-        return False, f"Request failed: {str(e)}"
+    """Get prediction history from session state"""
+    if "prediction_history" not in st.session_state:
+        st.session_state.prediction_history = []
+    
+    # Return the most recent predictions up to the limit
+    history = st.session_state.prediction_history[-limit:] if len(st.session_state.prediction_history) > limit else st.session_state.prediction_history
+    return True, history
 
-def format_timestamp(timestamp_str):
+def format_timestamp(timestamp):
     """Format timestamps for display"""
-    try:
-        dt = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-        return dt.strftime("%Y-%m-%d %H:%M:%S")
-    except:
-        return timestamp_str
+    if isinstance(timestamp, str):
+        try:
+            dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            return dt.strftime("%Y-%m-%d %H:%M:%S")
+        except:
+            return timestamp
+    return timestamp  # Already formatted or not a string
 
 # Custom styling
 st.markdown("""
@@ -133,12 +118,11 @@ st.markdown("""
 with st.sidebar:
     st.title("DON Prediction")
     
-    # Check API status
-    status, message = check_api_status()
-    if status:
-        st.success("✅ API Connected")
+    # Show model status
+    if model_loaded:
+        st.success("✅ Model Loaded")
     else:
-        st.error(f"❌ {message}")
+        st.error("❌ Model Not Loaded")
     
     # Navigation
     st.markdown("## Navigation")
@@ -291,9 +275,9 @@ elif page == "Prediction History":
             for pred in history:
                 record = {
                     "ID": pred["id"],
-                    "DON Value (ppb)": round(pred["prediction"], 2),
-                    "Timestamp": format_timestamp(pred["created_at"]),
-                    "Features Sample": str(pred["input_data"][:3]) + "..."
+                    "DON Value (ppb)": round(pred["don_value"], 2),
+                    "Timestamp": pred["timestamp"],
+                    "Features Sample": str(pred.get("features", [])[:3]) + "..."
                 }
                 records.append(record)
             
@@ -303,18 +287,19 @@ elif page == "Prediction History":
             # Display individual records with expandable details
             st.markdown('<div class="sub-header">Detailed Records</div>', unsafe_allow_html=True)
             for i, pred in enumerate(history):
-                with st.expander(f"Prediction {i+1}: {format_timestamp(pred['created_at'])} - DON: {pred['prediction']:.2f} ppb"):
+                with st.expander(f"Prediction {i+1}: {pred['timestamp']} - DON: {pred['don_value']:.2f} ppb"):
                     st.write("Prediction ID:", pred["id"])
-                    st.write("DON Value:", f"{pred['prediction']:.2f} ppb")
-                    st.write("Time:", format_timestamp(pred["created_at"]))
+                    st.write("DON Value:", f"{pred['don_value']:.2f} ppb")
+                    st.write("Time:", pred["timestamp"])
                     
-                    # Display first few features
-                    st.write("Input Features (first 10):")
-                    features_preview = pd.DataFrame({
-                        "Index": range(10),
-                        "Value": pred["input_data"][:10]
-                    })
-                    st.dataframe(features_preview)
+                    # Display first few features if available
+                    if "features" in pred:
+                        st.write("Input Features (first 10):")
+                        features_preview = pd.DataFrame({
+                            "Index": range(min(10, len(pred["features"]))),
+                            "Value": pred["features"][:10]
+                        })
+                        st.dataframe(features_preview)
     else:
         st.error(f"Failed to load prediction history: {history}")
 
