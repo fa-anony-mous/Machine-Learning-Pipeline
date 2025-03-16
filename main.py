@@ -17,18 +17,23 @@ async def run_fastapi():
     sys.path.insert(0, os.path.abspath('.'))
     
     from streamlit_app.backend.app.main import app as fastapi_app
-    config = uvicorn.Config(fastapi_app, host="127.0.0.1", port=8000)
+    config = uvicorn.Config(
+        fastapi_app, 
+        host="127.0.0.1", 
+        port=8000,
+        loop="asyncio"
+    )
     server = uvicorn.Server(config)
     await server.serve()
 
-async def main():
+def main():
     """Run both servers"""
     # Start Streamlit in a separate process
     streamlit_process = multiprocessing.Process(target=run_streamlit)
     streamlit_process.start()
     
     # Run FastAPI in the main process
-    await run_fastapi()
+    asyncio.run(run_fastapi())
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
