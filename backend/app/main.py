@@ -4,10 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 # Correct import paths
-from app.routes.prediction import router as prediction_router
-from app.database.connection import connect_to_mongo, close_mongo_connection
-from app.settings.config import settings
-from app.services.ml_model import load_model
+from backend.app.routes.prediction import router as prediction_router
+from backend.app.database.connection import connect_to_mongo, close_mongo_connection
+from backend.app.settings.config import settings
+from backend.app.services.ml_model import load_model
 
 # Create FastAPI app
 app = FastAPI(

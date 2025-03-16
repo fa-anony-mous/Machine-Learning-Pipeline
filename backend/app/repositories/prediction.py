@@ -2,7 +2,7 @@ from bson import ObjectId
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 
-from app.database.connection import get_database
+from backend.app.database.connection import get_database
 
 async def create_prediction(input_data: List[float], prediction_result: float) -> str:
     """
