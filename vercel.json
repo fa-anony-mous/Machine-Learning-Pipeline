@@ -1,0 +1,21 @@
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "backend/index.py",
+        "use": "@vercel/python"
+      }
+    ],
+    "routes": [
+      {
+        "handle": "filesystem"
+      },
+      {
+        "src": "/(.*)",
+        "dest": "backend/index.py"
+      }
+    ],
+    "env": {
+      "APP_MODULE": "backend.index:app"
+    }
+  }
