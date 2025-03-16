@@ -1,0 +1,63 @@
+Machine-Learning-Pipeline/
+│
+├── main.py                      # Main entry point that runs both servers
+├── requirements.txt             # Project-wide dependencies
+├── README.md                    # Project documentation
+│
+├── streamlit_app/               # Main application directory
+│   ├── app.py                   # Streamlit application
+│   ├── requirements.txt         # Streamlit-specific dependencies
+│   ├── .streamlit/              # Streamlit configuration
+│   ├── utils/                   # Utility functions for Streamlit
+│   │
+│   └── backend/                 # Backend API service
+│       ├── __init__.py
+│       ├── pyproject.toml       # Backend package configuration
+│       ├── .env                 # Environment variables
+│       │
+│       ├── app/                 # FastAPI application
+│       │   ├── __init__.py
+│       │   ├── main.py          # FastAPI entry point
+│       │   ├── routes/          # API endpoints
+│       │   ├── models/          # Database models
+│       │   ├── schemas/         # Pydantic schemas
+│       │   ├── services/        # Business logic
+│       │   │   ├── __init__.py
+│       │   │   └── ml_model.py  # ML model service
+│       │   ├── database/        # Database connections
+│       │   ├── repositories/    # Data access layer
+│       │   ├── settings/        # Configuration
+│       │   └── utils/           # Utility functions
+│       │
+│       └── tests/               # Backend tests
+│
+├── Data Science & Analytics/    # Data analysis and exploration
+│   ├── EDA.ipynb                # Exploratory Data Analysis notebook
+│   ├── X_data.csv               # Feature data
+│   ├── Y_data.csv               # Target data
+│   ├── MLE-Assignment.csv       # Original dataset
+│   │
+│   └── outputs/                 # Analysis outputs
+│       └── correlation_matrix.xlsx  # Correlation analysis results
+│
+└── Machine Learning/            # Machine learning model development
+    ├── interpretability.py      # Model interpretability analysis script
+    ├── DL_Trainer.ipynb         # Deep Learning model training notebook
+    ├── ML_trainer.ipynb         # Machine Learning model training notebook
+    ├── Trainer.ipynb            # General model training notebook
+    ├── X_data.csv               # Feature data (duplicate)
+    ├── Y_data.csv               # Target data (duplicate)
+    │
+    ├── interpretability_analysis/  # Model interpretability results
+    │   └── run_YYYYMMDD_HHMMSS/    # Timestamped run directories
+    │       ├── shap_summary_plot.png  # SHAP summary visualization
+    │       ├── shap_bar_plot.png      # SHAP feature importance bar plot
+    │       ├── shap_feature_importance.csv  # SHAP waterfall plots
+    │       
+    │       
+    │      
+    │
+    └── model_artifacts/         # Trained model files
+        ├── feature_scaler.pkl   # Feature scaler for preprocessing
+        ├── model_info.json      # Model metadata
+        └── don_prediction_model.pt  # PyTorch model
